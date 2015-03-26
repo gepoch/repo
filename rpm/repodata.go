@@ -1,9 +1,12 @@
 package rpm
 
+import "encoding/xml"
+
 // Checksum represents the checksum tags present in repomd files.
 type Checksum struct {
-	Type string `xml:"type,attr"`
-	Sum  string `xml:",chardata"`
+	Type      string `xml:"type,attr"`
+	Sum       string `xml:",chardata"`
+	PackageId string `xml:"pkgid,attr,omitempty"`
 }
 
 // Location is a hyperlink to the data file.
@@ -17,7 +20,7 @@ type Data struct {
 	Checksum        Checksum `xml:"checksum"`
 	OpenChecksum    Checksum `xml:"open-checksum"`
 	Location        Location `xml:"location"`
-	DatabaseVersion int      `xml:"database_version"`
+	DatabaseVersion int      `xml:"database_version,omitempty"`
 	OpenSize        int      `xml:"open-size"`
 	Timestamp       int      `xml:"timestamp"`
 	Size            int      `xml:"size"`
@@ -25,6 +28,7 @@ type Data struct {
 
 // Repomd is a struct designed to unmarshall repomd.xml files in XML.
 type Repomd struct {
-	Revision int    `xml:"revision"`
-	Data     []Data `xml:"data"`
+	XMLName  xml.Name `xml:"repomd"`
+	Revision int      `xml:"revision"`
+	Data     []Data   `xml:"data"`
 }

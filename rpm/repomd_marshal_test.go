@@ -3,6 +3,7 @@ package rpm
 import (
 	"encoding/xml"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/kr/pretty"
@@ -15,7 +16,6 @@ var repomdXML = `<?xml version="1.0" encoding="UTF-8"?>
     <checksum type="sha256">401dc19bda88c82c403423fb835844d64345f7e95f5b9835888189c03834cc93</checksum>
     <open-checksum type="sha256">bf9808b81cb2dbc54b4b8e35adc584ddcaa73bd81f7088d73bf7dbbada961310</open-checksum>
     <location href="repodata/401dc19bda88c82c403423fb835844d64345f7e95f5b9835888189c03834cc93-filelists.xml.gz"></location>
-    <database_version>0</database_version>
     <open-size>125</open-size>
     <timestamp>1427333070</timestamp>
     <size>123</size>
@@ -24,7 +24,6 @@ var repomdXML = `<?xml version="1.0" encoding="UTF-8"?>
     <checksum type="sha256">dabe2ce5481d23de1f4f52bdcfee0f9af98316c9e0de2ce8123adeefa0dd08b9</checksum>
     <open-checksum type="sha256">e1e2ffd2fb1ee76f87b70750d00ca5677a252b397ab6c2389137a0c33e7b359f</open-checksum>
     <location href="repodata/dabe2ce5481d23de1f4f52bdcfee0f9af98316c9e0de2ce8123adeefa0dd08b9-primary.xml.gz"></location>
-    <database_version>0</database_version>
     <open-size>167</open-size>
     <timestamp>1427333070</timestamp>
     <size>134</size>
@@ -51,7 +50,6 @@ var repomdXML = `<?xml version="1.0" encoding="UTF-8"?>
     <checksum type="sha256">6bf9672d0862e8ef8b8ff05a2fd0208a922b1f5978e6589d87944c88259cb670</checksum>
     <open-checksum type="sha256">e0ed5e0054194df036cf09c1a911e15bf2a4e7f26f2a788b6f47d53e80717ccc</open-checksum>
     <location href="repodata/6bf9672d0862e8ef8b8ff05a2fd0208a922b1f5978e6589d87944c88259cb670-other.xml.gz"></location>
-    <database_version>0</database_version>
     <open-size>121</open-size>
     <timestamp>1427333070</timestamp>
     <size>123</size>
@@ -67,28 +65,27 @@ var repomdXML = `<?xml version="1.0" encoding="UTF-8"?>
   </data>
 </repomd>`
 
-var repomdStruct = &repomd{
+var repomdStruct = &Repomd{
+	XMLName:  xml.Name{Local: "repomd"},
 	Revision: 1427333070,
 	Data: []Data{
 		{
-			Type:            "filelists",
-			Checksum:        Checksum{Type: "sha256", Sum: "401dc19bda88c82c403423fb835844d64345f7e95f5b9835888189c03834cc93"},
-			OpenChecksum:    Checksum{Type: "sha256", Sum: "bf9808b81cb2dbc54b4b8e35adc584ddcaa73bd81f7088d73bf7dbbada961310"},
-			Location:        Location{Href: "repodata/401dc19bda88c82c403423fb835844d64345f7e95f5b9835888189c03834cc93-filelists.xml.gz"},
-			DatabaseVersion: 0,
-			OpenSize:        125,
-			Timestamp:       1427333070,
-			Size:            123,
+			Type:         "filelists",
+			Checksum:     Checksum{Type: "sha256", Sum: "401dc19bda88c82c403423fb835844d64345f7e95f5b9835888189c03834cc93"},
+			OpenChecksum: Checksum{Type: "sha256", Sum: "bf9808b81cb2dbc54b4b8e35adc584ddcaa73bd81f7088d73bf7dbbada961310"},
+			Location:     Location{Href: "repodata/401dc19bda88c82c403423fb835844d64345f7e95f5b9835888189c03834cc93-filelists.xml.gz"},
+			OpenSize:     125,
+			Timestamp:    1427333070,
+			Size:         123,
 		},
 		{
-			Type:            "primary",
-			Checksum:        Checksum{Type: "sha256", Sum: "dabe2ce5481d23de1f4f52bdcfee0f9af98316c9e0de2ce8123adeefa0dd08b9"},
-			OpenChecksum:    Checksum{Type: "sha256", Sum: "e1e2ffd2fb1ee76f87b70750d00ca5677a252b397ab6c2389137a0c33e7b359f"},
-			Location:        Location{Href: "repodata/dabe2ce5481d23de1f4f52bdcfee0f9af98316c9e0de2ce8123adeefa0dd08b9-primary.xml.gz"},
-			DatabaseVersion: 0,
-			OpenSize:        167,
-			Timestamp:       1427333070,
-			Size:            134,
+			Type:         "primary",
+			Checksum:     Checksum{Type: "sha256", Sum: "dabe2ce5481d23de1f4f52bdcfee0f9af98316c9e0de2ce8123adeefa0dd08b9"},
+			OpenChecksum: Checksum{Type: "sha256", Sum: "e1e2ffd2fb1ee76f87b70750d00ca5677a252b397ab6c2389137a0c33e7b359f"},
+			Location:     Location{Href: "repodata/dabe2ce5481d23de1f4f52bdcfee0f9af98316c9e0de2ce8123adeefa0dd08b9-primary.xml.gz"},
+			OpenSize:     167,
+			Timestamp:    1427333070,
+			Size:         134,
 		},
 		{
 			Type:            "primary_db",
@@ -111,14 +108,13 @@ var repomdStruct = &repomd{
 			Size:            572,
 		},
 		{
-			Type:            "other",
-			Checksum:        Checksum{Type: "sha256", Sum: "6bf9672d0862e8ef8b8ff05a2fd0208a922b1f5978e6589d87944c88259cb670"},
-			OpenChecksum:    Checksum{Type: "sha256", Sum: "e0ed5e0054194df036cf09c1a911e15bf2a4e7f26f2a788b6f47d53e80717ccc"},
-			Location:        Location{Href: "repodata/6bf9672d0862e8ef8b8ff05a2fd0208a922b1f5978e6589d87944c88259cb670-other.xml.gz"},
-			DatabaseVersion: 0,
-			OpenSize:        121,
-			Timestamp:       1427333070,
-			Size:            123,
+			Type:         "other",
+			Checksum:     Checksum{Type: "sha256", Sum: "6bf9672d0862e8ef8b8ff05a2fd0208a922b1f5978e6589d87944c88259cb670"},
+			OpenChecksum: Checksum{Type: "sha256", Sum: "e0ed5e0054194df036cf09c1a911e15bf2a4e7f26f2a788b6f47d53e80717ccc"},
+			Location:     Location{Href: "repodata/6bf9672d0862e8ef8b8ff05a2fd0208a922b1f5978e6589d87944c88259cb670-other.xml.gz"},
+			OpenSize:     121,
+			Timestamp:    1427333070,
+			Size:         123,
 		},
 		{
 			Type:            "filelists_db",
@@ -134,7 +130,7 @@ var repomdStruct = &repomd{
 }
 
 func TestRepomdUnmarshal(t *testing.T) {
-	r := new(repomd)
+	r := new(Repomd)
 	err := xml.Unmarshal([]byte(repomdXML), &r)
 
 	if err != nil {
@@ -156,6 +152,6 @@ func TestRepomdMarshal(t *testing.T) {
 		t.Error(err)
 	}
 	if soutput != repomdXML {
-		t.Errorf("Incorrect marshall to XML.")
+		t.Errorf("%s", pretty.Diff(strings.Split(soutput, "\n"), strings.Split(repomdXML, "\n")))
 	}
 }
